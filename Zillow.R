@@ -69,8 +69,8 @@ Zillow <- data.frame("Address" = as.character(),
 )
 #for (i in 1:length(zips)){
 #for (i in 2){
-for (i in 1:5){
-  
+#for (i in 1:5){
+for (i in 1){
   print(paste("Starting zip", zips[i], i, "of", length(zips)))
   
   slp <- sample(1:4, 1)
@@ -141,8 +141,8 @@ for (i in 1:5){
   
   
   
-  for (t in 1:ps){
-  #for (t in 1){
+  #for (t in 1:ps){
+  for (t in 1){
     base.z <- paste(base.z1, zips[i], base.z2, t, "_p/", sep = "")
     slp <- sample(1:4, 1)
     print(paste("Sleeping for", slp, "seconds at", Sys.time()))
@@ -270,6 +270,19 @@ for (i in 1:5){
         html_nodes("#bdp-content") %>%
         html_nodes(".bdp-module.building-facts.zsg-content-section") %>% 
         length()
+      
+      # pinf.st <- blista %>% 
+      #   html_nodes("#wrapper") %>% 
+      #   html_nodes("#search-detail-lightbox") %>%
+      #   html_nodes("#search-detail-lightbox_content") %>%
+      #   html_children() %>% 
+      #   html_nodes("#search-detail-lightbox-content") %>% 
+      #   html_nodes("#detail-container-column") %>% 
+      #   html_nodes(".active-view.preload-lightbox") %>% 
+      #   html_nodes("main") %>%
+      #   html_nodes("#bdp-content") %>%
+      #   html_nodes(".total-units")
+        
       
       if (length(pinf.rd) > 0){
         #pull description data from rich-data nodes
@@ -578,6 +591,14 @@ for (i in 1:5){
         html_nodes(".individual-unit-price") %>%
         html_nodes(".routable") %>%
         html_attr("href")
+      if (length(blist) == 0){
+      
+      blist <-  blista %>%   
+        html_nodes(".bedroom-group-content") %>%
+        html_nodes(".individual-unit-price") %>%
+        html_nodes(".routable") %>%
+        html_attr("href")
+      }
       
       #Style 2, the building page doesn't have much more information than unit size and rent
       #so it has to be scraped directly and added to Zillow before the other links are run
