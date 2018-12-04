@@ -67,10 +67,7 @@ Zillow <- data.frame("Address" = as.character(),
                      "Scrape_Zip" = as.character(),
                      "Link" = as.character()
 )
-#for (i in 1:length(zips)){
-#for (i in 2){
-#for (i in 1:5){
-for (i in 1){
+for (i in 1:length(zips)){
   print(paste("Starting zip", zips[i], i, "of", length(zips)))
   
   slp <- sample(1:4, 1)
@@ -89,10 +86,9 @@ for (i in 1){
   print(paste("URL TRY CATCH INITIATING"))
   
   chka <-  tryCatch({
-    #read_html(curl(base.t, handle = curl::new_handle("useragent" = "Mozilla/5.0")))
     read_html(base.t)
   },
-  error = function(e){e}
+    error = function(e){e}
   )
   if(inherits(chka, "error")) {
     print("URL Broken...Trying Again")
@@ -101,14 +97,14 @@ for (i in 1){
     chka <-  tryCatch({
       read_html(base.t)
     },
-    error = function(e){e}
+      error = function(e){e}
     )
     if(inherits(chka, "error")) {
       print("---")
       print("URL Broken For Real")
       next
     }
-  }
+    }
   slp <- sample(1:4, 1)
   print(paste("Sleeping for", slp, "seconds at", Sys.time()))
   Sys.sleep(slp)
@@ -116,7 +112,6 @@ for (i in 1){
  
   plim <- read_html(base.t)
   ps <- plim %>%
-    #html_text()
     html_nodes(".main-wrapper") %>% 
     html_nodes(".active-view") %>% 
     html_nodes("#c-column") %>% 
@@ -141,9 +136,10 @@ for (i in 1){
   
   
   
-  #for (t in 1:ps){
-  for (t in 1){
+  for (t in 1:ps){
+    
     base.z <- paste(base.z1, zips[i], base.z2, t, "_p/", sep = "")
+    
     slp <- sample(1:4, 1)
     print(paste("Sleeping for", slp, "seconds at", Sys.time()))
     Sys.sleep(slp)
@@ -160,6 +156,7 @@ for (i in 1){
       print("URL Broken...Trying Again")
       print(paste("Sleeping for", 10, "seconds at", Sys.time()))
       Sys.sleep(10)
+      
       chka <-  tryCatch({
         read_html(base.z)
       },
@@ -177,28 +174,35 @@ for (i in 1){
     Sys.sleep(slp)
     
     print(paste("Reading Link",t, "of", ps))
-    #z.inf <- read_html(curl(base.z, handle = curl::new_handle("useragent" = "Mozilla/5.0")))
+    
     z.inf <- read_html(base.z)
     
-    #Grab urls for individual listings [?]
+
     #grab hrefs
     z.list <- z.inf %>%
       html_nodes(".photo-cards") %>%
       html_nodes("li") %>%
       html_nodes("a") %>%
       html_attr("href")
+    
     #id the links that are just favorite buttons
     print(paste("IDing links that are just favorite buttons"))
+    
     z.lk <- grep("myzillow", z.list)
+    
     #remove favorite button links from list of links
     z.list <- z.list[-z.lk]
+    
     #the vorwahl is www.zillow.com/....
     z.links <- paste("https://www.zillow.com", z.list, "?fullpage=true", sep = "")
     #now you have one page's worth of links!
+    
     #Seperate out the building links and grab the individual listings from them
     bs <- z.links[grep("/b/", z.links)]
+    
     #remove buildings from z.links
     z.links <- z.links[-grep("/b/", z.links)]
+    
     #grab listings
     if (length(bs) == 0){
       print("No building pages...moving on")
@@ -270,23 +274,11 @@ for (i in 1){
         html_nodes("#bdp-content") %>%
         html_nodes(".bdp-module.building-facts.zsg-content-section") %>% 
         length()
-      
-      # pinf.st <- blista %>% 
-      #   html_nodes("#wrapper") %>% 
-      #   html_nodes("#search-detail-lightbox") %>%
-      #   html_nodes("#search-detail-lightbox_content") %>%
-      #   html_children() %>% 
-      #   html_nodes("#search-detail-lightbox-content") %>% 
-      #   html_nodes("#detail-container-column") %>% 
-      #   html_nodes(".active-view.preload-lightbox") %>% 
-      #   html_nodes("main") %>%
-      #   html_nodes("#bdp-content") %>%
-      #   html_nodes(".total-units")
+
         
       
       if (length(pinf.rd) > 0){
         #pull description data from rich-data nodes
-        
         #Laundry
         lndy <- blista %>%
           html_nodes("#wrapper") %>% 
@@ -541,7 +533,7 @@ for (i in 1){
         if (length(descr) == 0){
           descr <- NA
         }
-      }
+      } # END if pinf.f is more than 0
       
       #Type
       typ <- "Apartment"
@@ -608,7 +600,7 @@ for (i in 1){
         #Checking to make sure that this sort of thing is here and this isn't just a dead link of some variaety
         
         #Check to see how many units are listed as "for rent"
-        blistn <-  blista %>%
+        blistn <- blista %>%
           html_nodes("#wrapper") %>% 
           html_nodes("#search-detail-lightbox") %>%
           html_nodes("#search-detail-lightbox_content") %>%
@@ -618,28 +610,15 @@ for (i in 1){
           html_nodes(".active-view.preload-lightbox") %>% 
           html_nodes("main") %>%
           html_nodes("#bdp-content") %>% 
-          html_nodes(".zsg-content-section.bdp-units") %>% 
-          html_nodes("a.zsg-tab-link") %>%
-          .[grep("for-rent", .)] %>% 
-          html_nodes(".zsg-badge.zsg-badge_green") %>% 
+          html_nodes(".zsg-badge.zsg-badge_green") %>%
           html_text() %>% 
+          gsub("\\+","",.) %>% 
           as.numeric()
         
         #If there is more than 0 listings in "for rent" then continue and grab the data
         if (length(blistn) > 0){
-          #ID which kind of non-style 1 page it is by looking for either a span with class "floorprint-title"
-          #These have the bed/bath/sqft info BUT not all of them are repeated with each price.
-          #You need to see how many "ul class = floorplan-units" there are compared to the number of spans
-          #if 1:1, then method style 2
-          #if note 1:1 then you're going to have to count how many uls there are per individual floorprint-title
-          #Once that ratio is figured out, add in if or while logic that specifies to move on to floorprint-title X
-          #after you've done y amounts of uls, passing the floorprint-title data on to the beds, bath, and sqft 
-          #vairables while itterating through the uls to get individual price...
-          #Oy
-          
-          
           #Find all uls
-         ndrops <-  blista %>%
+          ndrops <-  blista %>%
             html_nodes("#wrapper") %>% 
             html_nodes("#search-detail-lightbox") %>%
             html_nodes("#search-detail-lightbox_content") %>%
@@ -652,8 +631,8 @@ for (i in 1){
             html_nodes(".zsg-content-section.bdp-units") %>% 
             html_nodes(".zsg-tabview.units-section_tabbed") %>%
             html_nodes("#units-panel-for-rent") %>% 
-           html_nodes(".bedroom-group-content") %>% 
-           length() #gets you number of dropdown sections
+            html_nodes(".bedroom-group-content") %>% 
+            length() #gets you number of dropdown sections
          
          #Check to see how many subsections exist in each dropdown
          ndinf <- data.frame("Drodown" = as.numeric(), #number assigned to different types of units
@@ -662,7 +641,7 @@ for (i in 1){
                              )
          for (rr in 1:ndrops){
            #Get number of subsections
-          SS <-  blista %>%
+           SS <-  blista %>%
              html_nodes("#wrapper") %>% 
              html_nodes("#search-detail-lightbox") %>%
              html_nodes("#search-detail-lightbox_content") %>%
@@ -682,33 +661,32 @@ for (i in 1){
           
           for (dd in 1:SS){
             #get number of listings per subsection
-          SS.L <- blista %>%
-            html_nodes("#wrapper") %>% 
-            html_nodes("#search-detail-lightbox") %>%
-            html_nodes("#search-detail-lightbox_content") %>%
-            html_children() %>% 
-            html_nodes("#search-detail-lightbox-content") %>% 
-            html_nodes("#detail-container-column") %>% 
-            html_nodes(".active-view.preload-lightbox") %>% 
-            html_nodes("main") %>%
-            html_nodes("#bdp-content") %>%
-            html_nodes(".zsg-content-section.bdp-units") %>% 
-            html_nodes(".zsg-tabview.units-section_tabbed") %>%
-            html_nodes("#units-panel-for-rent") %>% 
-            html_nodes(".bedroom-group-content") %>% 
-            .[rr] %>% 
-            html_nodes(".zsg-media-bd") %>% 
-            .[dd] %>% 
-            html_nodes(".individual-unit") %>% 
-            length()
-          
-          adf <- data.frame("Drodown" = rr, #number assigned to different types of units
-                            "Subsection" = dd, #number assigned to different listed bed/bath/sqft listings
-                            "SS.Listings" = SS.L #number of differently priced listings per b/b/s combo
-          )
-          ndinf <- rbind(ndinf, adf)
-          
-          } #END number of different price lisitngs
+            SS.L <- blista %>%
+              html_nodes("#wrapper") %>% 
+              html_nodes("#search-detail-lightbox") %>%
+              html_nodes("#search-detail-lightbox_content") %>%
+              html_children() %>% 
+              html_nodes("#search-detail-lightbox-content") %>% 
+              html_nodes("#detail-container-column") %>% 
+              html_nodes(".active-view.preload-lightbox") %>% 
+              html_nodes("main") %>%
+              html_nodes("#bdp-content") %>%
+              html_nodes(".zsg-content-section.bdp-units") %>% 
+              html_nodes(".zsg-tabview.units-section_tabbed") %>%
+              html_nodes("#units-panel-for-rent") %>% 
+              html_nodes(".bedroom-group-content") %>% 
+              .[rr] %>% 
+              html_nodes(".zsg-media-bd") %>% 
+              .[dd] %>% 
+              html_nodes(".individual-unit") %>% 
+              length()
+            
+            adf <- data.frame("Drodown" = rr, #number assigned to different types of units
+                              "Subsection" = dd, #number assigned to different listed bed/bath/sqft listings
+                              "SS.Listings" = SS.L #number of differently priced listings per b/b/s combo
+                              )
+            ndinf <- rbind(ndinf, adf)
+            } #END number of different price lisitngs
              
          }# End number of different subsections
          
@@ -718,7 +696,7 @@ for (i in 1){
          
          for (q in 1:nrow(ndinf)){
            #Bedrooms
-          bd <-  blista %>%
+           bd <-  blista %>%
              html_nodes("#wrapper") %>% 
              html_nodes("#search-detail-lightbox") %>%
              html_nodes("#search-detail-lightbox_content") %>%
@@ -736,299 +714,158 @@ for (i in 1){
              html_nodes(".zsg-media-bd") %>% 
              .[ndinf[q,2]] %>% 
              html_nodes(".hide-xs") %>% 
-               html_text() %>% 
-               gsub(" bed . ", "", .) %>% 
-               trimws()
-             if (length(bd) == 0){
-               bd <- NA
+             html_text() %>% 
+             gsub(" bed . ", "", .) %>% 
+             trimws()
+           if (length(bd) == 0){
+             bd <- NA
              }
            
-           
            #Baths
-          bth <- blista %>%
-            html_nodes("#wrapper") %>% 
-            html_nodes("#search-detail-lightbox") %>%
-            html_nodes("#search-detail-lightbox_content") %>%
-            html_children() %>% 
-            html_nodes("#search-detail-lightbox-content") %>% 
-            html_nodes("#detail-container-column") %>% 
-            html_nodes(".active-view.preload-lightbox") %>% 
-            html_nodes("main") %>%
-            html_nodes("#bdp-content") %>%
-            html_nodes(".zsg-content-section.bdp-units") %>% 
-            html_nodes(".zsg-tabview.units-section_tabbed") %>%
-            html_nodes("#units-panel-for-rent") %>% 
-            html_nodes(".bedroom-group-content") %>% 
-            .[ndinf[q,1]] %>% 
-            html_nodes(".zsg-media-bd") %>% 
-            .[ndinf[q,2]] %>%
-            html_nodes(".short-ba") %>% 
-            html_text() %>% 
-            gsub(" bath", "", .) %>% 
-            trimws()
-          if (length(bth) == 0){
-            bth <- NA
-          }
-          
+           bth <- blista %>%
+             html_nodes("#wrapper") %>% 
+             html_nodes("#search-detail-lightbox") %>%
+             html_nodes("#search-detail-lightbox_content") %>%
+             html_children() %>% 
+             html_nodes("#search-detail-lightbox-content") %>% 
+             html_nodes("#detail-container-column") %>% 
+             html_nodes(".active-view.preload-lightbox") %>% 
+             html_nodes("main") %>%
+             html_nodes("#bdp-content") %>%
+             html_nodes(".zsg-content-section.bdp-units") %>% 
+             html_nodes(".zsg-tabview.units-section_tabbed") %>%
+             html_nodes("#units-panel-for-rent") %>% 
+             html_nodes(".bedroom-group-content") %>% 
+             .[ndinf[q,1]] %>% 
+             html_nodes(".zsg-media-bd") %>% 
+             .[ndinf[q,2]] %>%
+             html_nodes(".short-ba") %>% 
+             html_text() %>% 
+             gsub(" bath", "", .) %>% 
+             trimws()
+           if (length(bth) == 0){
+             bth <- NA
+           }
+           
           #SQFT
-          sqf <-  blista %>%
-            html_nodes("#wrapper") %>% 
-            html_nodes("#search-detail-lightbox") %>%
-            html_nodes("#search-detail-lightbox_content") %>%
-            html_children() %>% 
-            html_nodes("#search-detail-lightbox-content") %>% 
-            html_nodes("#detail-container-column") %>% 
-            html_nodes(".active-view.preload-lightbox") %>% 
-            html_nodes("main") %>%
-            html_nodes("#bdp-content") %>%
-            html_nodes(".zsg-content-section.bdp-units") %>% 
-            html_nodes(".zsg-tabview.units-section_tabbed") %>%
-            html_nodes("#units-panel-for-rent") %>% 
-            html_nodes(".bedroom-group-content") %>% 
-            .[ndinf[q,1]] %>% 
-            html_nodes(".zsg-media-bd") %>% 
-            .[ndinf[q,2]]  %>% 
-            html_nodes(".floorplan-title") %>% 
-            html_text() %>% 
-            gsub("[0-9] bed . [0-9] bath . ", "", .) %>% 
-            trimws()
-          if (length(sqf) == 0){
-            sqf <- NA
-          }
-          
-          for (wr in 1:ndinf[q,3]){
-          
-          pr <- blista %>%
-            html_nodes("#wrapper") %>% 
-            html_nodes("#search-detail-lightbox") %>%
-            html_nodes("#search-detail-lightbox_content") %>%
-            html_children() %>% 
-            html_nodes("#search-detail-lightbox-content") %>% 
-            html_nodes("#detail-container-column") %>% 
-            html_nodes(".active-view.preload-lightbox") %>% 
-            html_nodes("main") %>%
-            html_nodes("#bdp-content") %>%
-            html_nodes(".zsg-content-section.bdp-units") %>% 
-            html_nodes(".zsg-tabview.units-section_tabbed") %>%
-            html_nodes("#units-panel-for-rent") %>% 
-            html_nodes(".bedroom-group-content") %>% 
-            .[ndinf[q,1]] %>% 
-            html_nodes(".zsg-media-bd") %>% 
-            .[ndinf[q,2]] %>%
-            html_nodes(".floorplan-units") %>% 
-            html_nodes(".floorplan-unit-price") %>% 
-            .[wr] %>% 
-            html_text()
-          if (length(pr) == 0){
-            pr <- NA
-          }
-          #Create row here once price is in and rbind
-          
-          grb <- data.frame("Address" = ad,
-                            "Price" = pr,
-                            "Beds" = bd,
-                            "Baths" = bth,
-                            "SQFT" = sqf,
-                            "Type" = typ,
-                            "Laundry" = lndy,
-                            "Heating" = heat,
-                            "Cooling" = cool,
-                            "Pets" = pet,
-                            "Parking" = prk,
-                            "Desc" = descr,
-                            "Scrape_Date" = format(Sys.time(), "%m-%d-%Y"),
-                            "Scrape_Zip" = i,
-                            "Link" = bs[z]
-                            )
-          Zillow <- rbind(Zillow, grb)
-          print("++++")
-          print(paste("Finished Direct Building Listing", wr , "of", ndinf[q,3], "for subsection", ndinf[q,2], "of", max(ndinf[,2]), "in dropdown", ndinf[q,1], "of", max(ndinf[,1])))
-          print("++++")
-          
-          } #END listings per subsection for loop
-          
-          # for (v in 1:blistn){
-          #   
-          # 
-          # 
-          # 
-          # 
-          # #Baths
-          # bth <- blista %>%
-          #   html_nodes("#wrapper") %>% 
-          #   html_nodes("#search-detail-lightbox") %>%
-          #   html_nodes("#search-detail-lightbox_content") %>%
-          #   html_children() %>% 
-          #   html_nodes("#search-detail-lightbox-content") %>% 
-          #   html_nodes("#detail-container-column") %>% 
-          #   html_nodes(".active-view.preload-lightbox") %>% 
-          #   html_nodes("main") %>%
-          #   html_nodes("#bdp-content") %>%
-          #   html_nodes(".zsg-media-bd") %>% 
-          #   html_nodes(".floorplan-top") %>% 
-          #   .[v] %>% 
-          #   html_nodes("span") %>% 
-          #   html_nodes(".short-ba") %>% 
-          #   html_text() %>% 
-          #   gsub(" bath", "", .) %>% 
-          #   trimws()
-          # if (length(bth) == 0){
-          #   bth <- NA
-          # }
-          # 
-          # #SQFT
-          # sqf <- blista %>%
-          #   html_nodes("#wrapper") %>% 
-          #   html_nodes("#search-detail-lightbox") %>%
-          #   html_nodes("#search-detail-lightbox_content") %>%
-          #   html_children() %>% 
-          #   html_nodes("#search-detail-lightbox-content") %>% 
-          #   html_nodes("#detail-container-column") %>% 
-          #   html_nodes(".active-view.preload-lightbox") %>% 
-          #   html_nodes("main") %>%
-          #   html_nodes("#bdp-content") %>%
-          #   html_nodes(".zsg-media-bd") %>% 
-          #   html_nodes(".floorplan-top") %>% 
-          #   .[v] %>% 
-          #   #html_nodes("span") %>% 
-          #   html_nodes(".floorplan-title") %>% 
-          #   #html_nodes(".hide-xs") %>% 
-          #   html_text() %>% 
-          #   gsub("[0-9] bed . [0-9] bath . ", "", .) %>% 
-          #   trimws()
-          # if (length(sqf) == 0){
-          #   sqf <- NA
-          # }
-          # 
-          # 
-          # #Might have to do a condtional mini for loop here[?]
-          # 
-          # #Price
-          # pr <- blista %>%
-          #   html_nodes("#wrapper") %>% 
-          #   html_nodes("#search-detail-lightbox") %>%
-          #   html_nodes("#search-detail-lightbox_content") %>%
-          #   html_children() %>% 
-          #   html_nodes("#search-detail-lightbox-content") %>% 
-          #   html_nodes("#detail-container-column") %>% 
-          #   html_nodes(".active-view.preload-lightbox") %>% 
-          #   html_nodes("main") %>%
-          #   html_nodes("#bdp-content") %>%
-          #   html_nodes(".zsg-media-bd") %>%
-          #   html_nodes(".floorplan-units") %>% 
-          #   html_nodes(".floorplan-unit-price") %>% 
-          #   .[26] %>% 
-          #   html_text()
-          # if (length(pr) == 0){
-          #   pr <- NA
-          # }
-          #   
-          #   
-          # 
-          # #Beds
-          # #need to find how many "individual listings" nodes there are per set of bed/bath/sq info
-          # #have a build in condition where if [v] is less than the number of listings in b/b/s then pull in 
-          # #either data from a "set" point, or just use the same value as [v-1]
-          # 
-          # 
-          # 
-          # 
-          # 
-          # grb <- data.frame("Address" = ad,
-          #                   "Price" = pr,
-          #                   "Beds" = bd,
-          #                   "Baths" = bth,
-          #                   "SQFT" = sqf,
-          #                   "Type" = typ,
-          #                   "Laundry" = lndy,
-          #                   "Heating" = heat,
-          #                   "Cooling" = cool,
-          #                   "Pets" = pet,
-          #                   "Parking" = prk,
-          #                   "Desc" = descr,
-          #                   "Scrape_Date" = format(Sys.time(), "%m-%d-%Y"),
-          #                   "Scrape_Zip" = i,
-          #                   "Link" = bs[z]
-          #                   
-          # )
-          # Zillow <- rbind(Zillow, grb)
-          # print("++++")
-          # print(paste("Finished Direct Building Listing", v, "of", blistn))
-          # print("++++")
-          
-          } #END loop for number of discovered for rent units on building page (blistn results)
-        } else {                #END IF there are listing present in style 2 on the page
-
-        print(paste("There were no actual listing for building page:", bs[z]))
-        print(paste("Finished Building Page", z, "of", length(bs)))
-        next
-        }
-      } else {          #END if building page brings up 0 "for rent" links -- should just skip to the next building page as the else parameter on this
-        print(paste("NO LISTINGS FOR THIS PAGE..."))
-        next
-      }
-      
+           sqf <-  blista %>%
+             html_nodes("#wrapper") %>% 
+             html_nodes("#search-detail-lightbox") %>%
+             html_nodes("#search-detail-lightbox_content") %>%
+             html_children() %>% 
+             html_nodes("#search-detail-lightbox-content") %>% 
+             html_nodes("#detail-container-column") %>% 
+             html_nodes(".active-view.preload-lightbox") %>% 
+             html_nodes("main") %>%
+             html_nodes("#bdp-content") %>%
+             html_nodes(".zsg-content-section.bdp-units") %>% 
+             html_nodes(".zsg-tabview.units-section_tabbed") %>%
+             html_nodes("#units-panel-for-rent") %>% 
+             html_nodes(".bedroom-group-content") %>% 
+             .[ndinf[q,1]] %>% 
+             html_nodes(".zsg-media-bd") %>% 
+             .[ndinf[q,2]]  %>% 
+             html_nodes(".floorplan-title") %>% 
+             html_text() %>% 
+             gsub("[0-9] bed . [0-9] bath . ", "", .) %>% 
+             trimws()
+           if (length(sqf) == 0){
+             sqf <- NA
+           }
+           for (wr in 1:ndinf[q,3]){
+             pr <- blista %>%
+               html_nodes("#wrapper") %>% 
+               html_nodes("#search-detail-lightbox") %>%
+               html_nodes("#search-detail-lightbox_content") %>%
+               html_children() %>% 
+               html_nodes("#search-detail-lightbox-content") %>% 
+               html_nodes("#detail-container-column") %>% 
+               html_nodes(".active-view.preload-lightbox") %>% 
+               html_nodes("main") %>%
+               html_nodes("#bdp-content") %>%
+               html_nodes(".zsg-content-section.bdp-units") %>% 
+               html_nodes(".zsg-tabview.units-section_tabbed") %>%
+               html_nodes("#units-panel-for-rent") %>% 
+               html_nodes(".bedroom-group-content") %>% 
+               .[ndinf[q,1]] %>% 
+               html_nodes(".zsg-media-bd") %>% 
+               .[ndinf[q,2]] %>%
+               html_nodes(".floorplan-units") %>% 
+               html_nodes(".floorplan-unit-price") %>% 
+               .[wr] %>% 
+               html_text()
+             if (length(pr) == 0){
+               pr <- NA
+               }
+             #Create row here once price is in and rbind
+             grb <- data.frame("Address" = ad,
+                               "Price" = pr,
+                               "Beds" = bd,
+                               "Baths" = bth,
+                               "SQFT" = sqf,
+                               "Type" = typ,
+                               "Laundry" = lndy,
+                               "Heating" = heat,
+                               "Cooling" = cool,
+                               "Pets" = pet,
+                               "Parking" = prk,
+                               "Desc" = descr,
+                               "Scrape_Date" = format(Sys.time(), "%m-%d-%Y"),
+                               "Scrape_Zip" = i,
+                               "Link" = bs[z]
+                               )
+             Zillow <- rbind(Zillow, grb)
+             print("++++")
+             print(paste("Finished Direct Building Listing", wr , "of", ndinf[q,3], "for subsection", ndinf[q,2], "of", max(ndinf[,2]), "in dropdown", ndinf[q,1], "of", max(ndinf[,1])))
+             print("++++")
+             } #END listings per subsection for loop
+           } #END loop for number of discovered for rent units on building page (blistn results)
+         } else {                #END IF there are listing present in style 2 on the page
+           print(paste("There were no actual listing for building page:", bs[z]))
+           print(paste("Finished Building Page", z, "of", length(bs)))
+           next
+           }
+        } #END if building page brings up 0 "for rent" links -- should just skip to the next building page as the else parameter on this
       add.links <- c(add.links, blist)
       print(paste("++++"))
       print(paste("Finished Building Page", z, "of", length(bs)))
-      # slp <- sample(1:5, 1)
-      # print(paste("Sleeping for", slp, "seconds at", Sys.time()))
-    
       } # END if the listing is not style 1
-      
-      
+    
     z.links <- c(z.links, add.links)
     z.links <- unique(z.links)
     print(paste("Finished Getting Links From Page", t, "of 20 for Zip", i, "of", length(zips)))
-  } # END page listing scrape
-
-  
+    } # END page listing scrape
   for (a in 1:length(z.links)){
-   # for (a in 1:5){
-    # if(a %% 20 == 0){
-    # slp <- sample(60:75, 1)
-    # print(paste("Sleeping for", slp, "seconds at", Sys.time()))
-    # Sys.sleep(slp)
-    # print(paste("Staring back up at", Sys.time()))
-    # }
-    #Think of TryCatch as a function that has to return a result
-    #It goes out, performs the action, and returns what the result was
-    #In this case we have it going out and returning an error
-    #The if statement beneath it then evaluates what the returned value
-    #Was and sends the "next" command if it was an error
     slp <- sample(1:4, 1)
     print(paste("Sleeping for", slp, "seconds at", Sys.time()))
     Sys.sleep(slp)
     
     print(paste("Try Catch for Listing Links Initiated"))
-    
     chka <-  tryCatch({
       read_html(z.links[a])
-      },
-    error = function(e){e}
+    },
+      error = function(e){e}
     )
-   if(inherits(chka, "error")) {
-     print(paste("Try Catch Failed!"))
-     print("URL Broken... Trying again")
-     
-     print(paste("Sleeping for", 10, "seconds at", Sys.time()))
-     Sys.sleep(10)
-     chka <-  tryCatch({
-       read_html(z.links[a])
-     },
-     error = function(e){e}
-     )
-     if(inherits(chka, "error")) {
-       print("----")
-       print("URL Broken")
-       next
-     }
-   }
+    if(inherits(chka, "error")) {
+      print(paste("Try Catch Failed!"))
+      print("URL Broken... Trying again")
+      print(paste("Sleeping for", 10, "seconds at", Sys.time()))
+      Sys.sleep(10)
+      chka <-  tryCatch({
+        read_html(z.links[a])
+      },
+        error = function(e){e}
+      )
+      if(inherits(chka, "error")) {
+        print("----")
+        print("URL Broken")
+        next
+      }
+      }
     print(paste("Try Catch Success!"))
     slp <- sample(1:3, 1)
     print(paste("Sleeping for", slp, "seconds at", Sys.time()))
-    Sys.sleep(slp)
-    #ls <- read_html(GET(z.links[55:100],use_proxy("81.30.176.28", port = 23500)))
+    Sys.sleep(slp)  
     
     ls <- read_html(z.links[a])
     #Rental Check
@@ -1036,9 +873,11 @@ for (i in 1){
       html_nodes(".hdp-summary") %>%
       html_nodes("#listing-icon") %>%
       html_attrs() 
+    
     rc <- grep("for-rent", cls)
+    
     if (length(rc) < 1){
-      print(paste("Listing", a,  "Not For Rent")) #} ###### Remove this bracket before returning
+      print(paste("Listing", a,  "Not For Rent:", z.links[a])) #} ###### Remove this bracket before returning
       next
     }
     
@@ -1149,7 +988,6 @@ for (i in 1){
       html_nodes(".zsg-content-component") %>% 
       html_nodes(".notranslate.zsg-content-item") %>% 
       html_text()
-    
     grb <- data.frame("Address" = ad,
                       "Price" = pr,
                       "Beds" = bd,
@@ -1165,8 +1003,7 @@ for (i in 1){
                       "Scrape_Date" = format(Sys.time(), "%m-%d-%Y"),
                       "Scrape_Zip" = i,
                       "Link" = z.links[a]
-                      
-    )
+                      )
     Zillow <- rbind(Zillow, grb)
     print("++++")
     print(paste("Finished Listing", a, "of", length(z.links)))
@@ -1174,7 +1011,7 @@ for (i in 1){
   }
   slp <- sample(1:8, 1)
   print(paste("Sleeping for", slp, "seconds at", Sys.time()))
-  #Sys.sleep(slp)
+  Sys.sleep(slp)
   print(paste("Finished Zip", i, "of", length(zips)))  
 }
 
@@ -1189,11 +1026,12 @@ if (pls < 1){
   print("......")
 } else {
 
+  #write to zillow master table
+  write_civis(tablename = "sandbox.zillow_master", if_exists = "append")
   
-  #curs <- read.csv("H:/My Documents/Git Code Examples/Zill_Scraper/Zillow.csv", stringsAsFactors = FALSE)
-  #Zillowout <- rbind(curs, Zillow)
+  #write to zillow "daily" table, it's supposed to 
+  write_civis(tablename = "sandbox.zillow_master", if_exists = "drop")
 
-  #write.csv(Zillowout, "H:/My Documents/Git Code Examples/Zill_Scraper/Zillow.csv", row.names = FALSE)
 
   print(paste("Finished Scraping", pls, "new listings. Total listings at", nrow(Zillow)))
 }
