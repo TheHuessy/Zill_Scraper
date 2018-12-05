@@ -100,7 +100,7 @@ for (i in 1){
     error = function(e){e}
   )
   if(inherits(chka, "error")) {
-    print("URL Broken...Trying Again")
+    print(paste("URL", base.t, "Broken...Trying Again"))
     print(paste("Sleeping for", 10, "seconds at", Sys.time()))
     Sys.sleep(10)
     chka <-  tryCatch({
@@ -110,7 +110,7 @@ for (i in 1){
     )
     if(inherits(chka, "error")) {
       print("---")
-      print("URL Broken For Real")
+      print(paste("URL", base.t, "Broken For Real"))
       next
     }
     }
@@ -138,8 +138,9 @@ for (i in 1){
     html_text() %>% 
     as.numeric()
     if (length(ps) == 0){
-      print(paste("No pages found for url", base.t))
-      next
+      print(paste("No additional pages found for url", base.t))
+      ps <- 1
+      #next
     }
   
   
@@ -162,7 +163,7 @@ for (i in 1){
     )
     if(inherits(chka, "error")) {
       print(paste("Try Catch Failed!"))
-      print("URL Broken...Trying Again")
+      print(paste("URL", base.z, "Broken...Trying Again"))
       print(paste("Sleeping for", 10, "seconds at", Sys.time()))
       Sys.sleep(10)
       
@@ -173,7 +174,7 @@ for (i in 1){
       )
       if(inherits(chka, "error")) {
         print("---")
-        print("URL Broken For Real")
+        print(paste("URL", base.z, "Broken For Real"))
         next
       }
     }
@@ -233,7 +234,7 @@ for (i in 1){
       )
       if(inherits(chka, "error")) {
         print(paste("Try Catch Failed!"))
-        print("URL Broken...Trying Again")
+        print(paste("URL", bs[z], "Broken...Trying Again"))
         print(paste("Sleeping for", 10, "seconds at", Sys.time()))
         Sys.sleep(10)
         chka <-  tryCatch({
@@ -243,7 +244,7 @@ for (i in 1){
         )
         if(inherits(chka, "error")) {
           print("---")
-          print("URL Broken For Real")
+          print(paste("URL", bs[z], "Broken For Real"))
           next
         }
       }
@@ -600,10 +601,7 @@ for (i in 1){
         html_nodes(".routable") %>%
         html_attr("href")
       }
-      
-      #Style 2, the building page doesn't have much more information than unit size and rent
-      #so it has to be scraped directly and added to Zillow before the other links are run
-      #not ideal given the flow, but this way we're not missing out on basic info
+
       if (length(blist) == 0){
         #Grabbing the raw listing data
         #Checking to make sure that this sort of thing is here and this isn't just a dead link of some variaety
@@ -857,7 +855,7 @@ for (i in 1){
     )
     if(inherits(chka, "error")) {
       print(paste("Try Catch Failed!"))
-      print("URL Broken... Trying again")
+      print(paste("URL", z.links[a],  "Broken... Trying again"))
       print(paste("Sleeping for", 10, "seconds at", Sys.time()))
       Sys.sleep(10)
       chka <-  tryCatch({
@@ -867,7 +865,7 @@ for (i in 1){
       )
       if(inherits(chka, "error")) {
         print("----")
-        print("URL Broken")
+        print(paste("URL", z.links[a], "Broken"))
         next
       }
       }
@@ -886,7 +884,7 @@ for (i in 1){
     rc <- grep("for-rent", cls)
     
     if (length(rc) < 1){
-      print(paste("Listing", a,  "Not For Rent:", z.links[a])) #} ###### Remove this bracket before returning
+      print(paste("Listing", a,  "Not For Rent:", z.links[a])) 
       next
     }
     
@@ -1039,7 +1037,7 @@ if (pls < 1){
   write_civis(tablename = "sandbox.zillow_master", if_exists = "append")
   
   #write to zillow "daily" table, it's supposed to 
-  write_civis(tablename = "sandbox.zillow_master", if_exists = "drop")
+  write_civis(tablename = "sandbox.zillow_daily", if_exists = "drop")
 
 
   print(paste("Finished Scraping", pls, "new listings. Total listings at", nrow(Zillow)))
