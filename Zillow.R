@@ -67,12 +67,21 @@ Zillow <- data.frame("Address" = as.character(),
                      "Scrape_Zip" = as.character(),
                      "Link" = as.character()
 )
-for (i in 1:length(zips)){
+#for (i in 1:length(zips)){
+for (i in 1){
   print(paste("Starting zip", zips[i], i, "of", length(zips)))
   
+  if ((i %% 20) == 0){
+    slp <- sample(30:60, 1)
+    print(paste("Super Sleeping for", slp, "seconds at", Sys.time()))
+    Sys.sleep(slp)  
+    
+  } else {
   slp <- sample(1:4, 1)
   print(paste("Sleeping for", slp, "seconds at", Sys.time()))
   Sys.sleep(slp)
+  }
+  
   add.links <- as.character()
   
   #Determine number of pages per landing page
